@@ -84,39 +84,22 @@ c.close_port_after_each_call =True
 # end_time=time.time()
 # print(end_time,stat_time)############
 
-# tmp=2
+# tmp2=(-2)
 # c.write_register(
 #     registeraddress=int('17D0',16),
-#     value=tmp,
-#     numbers_of_decimals=0,
-#     signed=True,
-#     functioncode=3
 #
+#     value=tmp2,
+#     number_of_decimals=3,
+#     signed=True, #是否有負數
+#     functioncode=6
 # )
 
-###文字>十六進制>10進制
+# tmp=c.read_register(
+#     registeraddress=int('17D0',16),
+#
+#     number_of_decimals=2,
+#     functioncode=3,
+#     signed=True
+# )
+# print(tmp)
 
-for xx in ['&','~','&~']: ##串列
-
-    Tmp2=int(xx.encode('utf-8').hex(),16)
-    print(Tmp2)
-
-c.write_string(
-    registeraddress=int('17D0',16),
-    textstring='AC',
-    number_of_registers=1
-)
-tmp=16706
-c.write_register(
-    registeraddress=int('17D0',16),
-    value=tmp,
-    number_of_decimals=0,
-    signed=True,
-    functioncode=6
-
-)
-tmp=c.read_string(
-    registeraddress=int('17D0',16),
-    nuber_of_=1,
-    functioncode=3
-)
