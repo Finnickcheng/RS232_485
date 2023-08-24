@@ -38,21 +38,21 @@ c=ModbusClient(
 # )
 # print(s)
 
-import time
-start_time=time.time()
-tmp=[]
-for xx in range(0,100):
-
-    tmp.append(5)
-print(tmp)
-
-
-s = c.write_multiple_registers(
-  regs_addr=int('17D0', 16),
-  regs_value=tmp
-)
-end_time=time.time()
-print('end-start:',end_time-start_time)
-
-
-
+# import time
+# start_time=time.time()
+# tmp=[]
+# for xx in range(0,100):
+#
+#     tmp.append(5)
+# print(tmp)
+#
+#
+# s = c.write_multiple_registers(
+#   regs_addr=int('17D0', 16),
+#   regs_value=tmp
+# )
+# end_time=time.time()
+# print('end-start:',end_time-start_time)
+#
+#
+#
