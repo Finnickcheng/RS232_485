@@ -8,11 +8,11 @@ messege = MIMEMultipart()
 
 
 
-# def UploadFileToByte(Name=):
-#     with open('upload/ASCII字元表.docx',"rb") as file:
-#         part = MIMEApplication(file.read(), Name=Name)
-#         part['content-Disposition'] = 'attachment; filename={name}'.format(name=Name)  # 名稱定義
-#     return part
+def UploadFileToByte(Name):
+    with open('upload/ASCII字元表.docx',"rb") as file:
+        part = MIMEApplication(file.read(), Name=Name)
+        part['content-Disposition'] = 'attachment; filename={name}'.format(name=Name)  # 名稱定義
+    return part
 
 # TmpCC=['?@','?@gmail.com'] #CC
 
