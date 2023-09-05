@@ -471,35 +471,81 @@ db.autocommit = True
 
 ##****
 
-# with db.cursor() as cursor:
-#     command = "SELECT * FROM `bit_cells`"
-#     cursor.execute(command)
-#     db.commit()
-#     tmp = cursor.fetchall()
-#
-#     for n in tmp:
-#         if n[1] == 'M5' and n[7]==1:
-#             print(n)
-#             tmp = json.loads(n[8])
-#             tmpNotifyPlatFrom=int(tmp["NotifyPlatFrom"])
-#             tmpNotifyType=int(tmp["NotifyType"])
-#             if tmpNotifyType == 1 and tmpNotifyPlatFrom == 2:
-#                 print('Line')
+with db.cursor() as cursor:
+    command = "SELECT * FROM `bit_cells`"
+    cursor.execute(command)
+    db.commit()
+    tmp = cursor.fetchall()
+
+    for n in tmp:
+        if n[1] == 'M5' and n[7]==1:
+            print(n)
+            tmp = json.loads(n[8])
+            tmpNotifyPlatFrom=int(tmp["NotifyPlatFrom"])
+            tmpNotifyType=int(tmp["NotifyType"])
+            if tmpNotifyType == 1 and tmpNotifyPlatFrom == 2:
+                print('Line')
 #
 #
 #     db.close()
 
-with db.cursor() as corsor:
+# with db.cursor() as corsor:
+#     command="select * from `bit_cells`"
+#     corsor.execute(command)
+#     db.commit()
+#     asd=corsor.fetchall()
+#     for n in asd:
+#         if n[1] == 'Y6' and n[7] == 1:
+#             print(n)
+#             tmp= json.loads(n[8])
+#             tmp1=int(tmp["NotifyType"])
+#             tmp2=int(tmp["NotifyPlatFrom"])
+#             if tmp1 == 1 and tmp2 == 1:
+#                 print('line')
+#
+#     db.close()
+
+
+while True:
+
+ with db.cursor() as corsor:
     command="select * from `bit_cells`"
     corsor.execute(command)
     db.commit()
     asd=corsor.fetchall()
+    Int_TimeStamp = int(time.time())
+    TmpDate = datetime.fromtimestamp(Int_TimeStamp).strftime('%Y-%m-%d %H:%M:%S')
+    # print(asd)
+
     for n in asd:
-        if n[1] == 'Y6' and n[7] == 1:
-            print(n)
-            tmp= json.loads(n[8])
+
+        if  n[7] == 1:
+            # print(n)
+            tmp=json.loads(n[8])
             tmp1=int(tmp["NotifyType"])
             tmp2=int(tmp["NotifyPlatFrom"])
             if tmp1 == 1 and tmp2 == 1:
-                print('line')
+                print(n[1],"email",TmpDate)
+            elif tmp1 == 1 and tmp2 == 2:
+                print(n[1],'line',TmpDate)
+            elif tmp1 == 1 and tmp2 == 0:
+                print(n[1],'SMS',TmpDate)
+            else:
+                print('NULL')
+            if n[7] == 0:
+             break
+    time.sleep(1)
+
+
+
+
+
+
+
+
+
+
+
+
+
 

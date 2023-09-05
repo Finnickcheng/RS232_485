@@ -9,11 +9,11 @@ c=ModbusClient(
     debug=False
 )
 #寫入單筆
-# s=c.write_single_coil(
-#     bit_addr=int('500',16),
-#     bit_value=False
-# )
-# print(s)
+s=c.write_single_coil(
+    bit_addr=int('500',16),
+    bit_value=False
+)
+print(s)
 
 #寫入多筆
 #
