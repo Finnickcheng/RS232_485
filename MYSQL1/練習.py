@@ -7,9 +7,11 @@ import math
 import minimalmodbus
 from pyModbusTCP.client import ModbusClient
 from datetime import datetime
-def PLCTCPBits(host,port,address):
+
+
+def PLCTCPBits(host, port, address):
     try:
-        c=ModbusClient(
+        c = ModbusClient(
             host=host,
             port=port,
             auto_open=True,
@@ -25,9 +27,11 @@ def PLCTCPBits(host,port,address):
         return s
     except:
         print('connect error')
-def PLCTCPword(host,port,address):
+
+
+def PLCTCPword(host, port, address):
     try:
-        c=ModbusClient(
+        c = ModbusClient(
             host=host,
             port=port,
             auto_open=True,
@@ -35,6 +39,7 @@ def PLCTCPword(host,port,address):
             timeout=1,
             debug=False
         )
+
         x = c.read_holding_registers(
             reg_addr=int(address, 16),
             reg_nb=100
@@ -42,90 +47,148 @@ def PLCTCPword(host,port,address):
         return x
     except:
         print('connect error')
-def unsigned_16(asd,agv_decimal):
-    n=int(agv_decimal)
-    if n<0:
-        n=asd._16bits +n
+
+
+def unsigned_16(agv_decimal):
+    n = int(agv_decimal)
+    if n < 0:
+        n = 65536 + n
     return n
-def signed_16(asd,agv_decimal):
-    n=int(agv_decimal)
-    if n>32767:
-        n=n-asd._16Bits
+
+
+def signed_16(agv_decimal):
+    n = int(agv_decimal)
+    if n > 32767:
+        n = n - 65536
     return n
-#16Bits=65536
+
+
+# 16Bits=65536
 start_time = time.time()
 db = pymysql.connect(
-host='127.0.0.1', port=3306,
-user='PLC', password='123123123',
-db='testgraphiccontrol'
+    host='127.0.0.1', port=3306,
+    user='PLC', password='123123123',
+    db='testgraphiccontrol'
 )
 
 db.autocommit = True
-Tmplist=[]
+Tmplist = []
 while db.open:
     TmpArray = []
+
     # 讀取SQL抓取ip以及port
-    # ---------------------------------------------------------------------------------------------------
     with db.cursor() as cursor:
-        command="SELECT * FROM `machines` ORDER BY `Serial`ASC;"
+
+        command = "SELECT * FROM `machines` ORDER BY `Serial`ASC;"
         cursor.execute(command)
         db.commit()
-        vals = cursor.fetchall()
-        for machine in vals:
-            collect=json.loads(n[6])
-            Tmplist=machine[n[3],collect["port"],machine[0]]
+        for machine in cursor.fetchall():
+            collect = json.loads(machine[6])
+            Tmplist = [machine[3], collect["Port"], machine[0]]
             TmpArray.append(Tmplist)
+        # 抓IP 讀PLC寫入資料表
+        for tcp in TmpArray:
+            TmpOccurTimeStamp = int(time.time())
+            TmpOccurDate = datetime.fromtimestamp(TmpOccurTimeStamp).strftime("%Y-%m-%d %H:%M:%S")
 
-
-
-
-        command="SELECT * FROM `coils` WHERE `MachineGuid`='e19aec11-9b51-4d01-b877-f38b33495414' ORDER BY `Serial` asc;"
-        cursor.execute(command)
-        db.commit()
-        vals = cursor.fetchall()
-        TmpOccurTimeStamp = int(time.time())
-        TmpOccurDate = datetime.fromtimestamp(TmpOccurTimeStamp).strftime("%Y-%m-%d %H:%M:%S")
-        # TmpReadCoils=ct.read
-        # CommentTitle=''
-        # CommentValue=''
-        # for key , n in enumerate(vals):
-        #     tmp = json.loads(n[7])
-        #     CommentTitle=tmp['Comment'] + ','
-        #     tmpx=tmp['Value']
-        #     tmpX= '0'
-        #     if TmpReadCoils[key]:
-        #         tmpX ='1'
-        #     CommentValue += tmpX +','
-        for n in vals:
-            tmp=json.loads(n[7])
-            tmp1=int(tmp["Value"])
-            tmp2=int(tmp["Comment"])
-            tmp3=int(tmp['Status'])
-            if tmp1 == 1:
-              print('TRUE')
-            command = "UPDATE `coils` SET `Status`=%s,`value` = %s,`updated_at` = %s WHERE `Guid` = %s"
-            cursor.execute(command, (9,tmp1, TmpOccurDate,n[0]))
+            command = "SELECT * FROM `coils` WHERE `MachineGuid` = %s order by Serial;"
+            cursor.execute(command, machine[0])
+            X = list(cursor.fetchall())
             db.commit()
-        # CommentTitle = CommentTitle[:-1]
-        # CommentValue = CommentValue[:-1]
-        # 'value':CommentValue
+
+            print('Running... {}'.format(TmpOccurDate))
+            print('Ip:{},Port:{}....coil'.format(tcp[0], tcp[1]))
+
+            PlCstatus = PLCTCPBits(tcp[0], tcp[1], "0A00")
+            for key, n in enumerate(X):
+                TmpOccurTimeStamp = int(time.time())
+                TmpOccurDate = datetime.fromtimestamp(TmpOccurTimeStamp).strftime("%Y-%m-%d %H:%M:%S")
+
+                # 更新資料
+                try:
+                    if str(PlCstatus[key]) == "False":
+                        tmp = "0"
+                    else:
+                        tmp = "1"
+                    command = "UPDATE `coils` SET `Value` = %s , `updated_at` = %s WHERE `coils`.`Guid` = %s;"
+                    cursor.execute(command, (tmp, TmpOccurDate, n[0]))
+                    db.commit()
+                except:
+                    print(f" Connect Error!, {TmpOccurDate}\n")
+
+                    break
+
+            # 讀取PLC registers 寫入資料表
+
+            command = "SELECT * FROM `registers` WHERE `MachineGuid` = %s order by Serial asc;"
+            cursor.execute(command, machine[0])
+            vals = cursor.fetchall()
+            db.commit()
+            vals_total_len=len(vals)
+            print('IP:{},Port:{}....word'.format(tcp[0], tcp[1]))
+            Tmpreadvals={}
+            if vals_total_len !=0:
+
+                Tmpanyindex=0
+                while Tmpanyindex >=0:
+                    Address=vals[Tmpanyindex == 100][4]
+                    if Tmpanyindex == 0:
+                        Address =vals[0][4]
+                    if vals_total_len < 100:
+
+                        Tmpreadvals = {
+                             'MachineName':address[3],
+                             'MachineGuid':address[2],
+                             'Type':'Register',
+                             'Address':Address,
+                             'Length':vals_total_len,
+                             'Time':10,
+                             'OverTimes':0
+                        }
+                    if len(Tmpreadvals) != 0:
+                        Arrayregister += Tmpreadvals
+                        Tmpanyindex = -1
+                        continue
+                    else:
+                        Arrayregister = []
+                        Tmpanyindex = -1
+                        continue
+
+                for asd in vals:
+                    Tmpreadvals = {
+                        'MachineName': asd[3],
+                        'MachineGuid': asd[2],
+                        'Type': 'Register',
+                        'Address': Address,
+                        'Length': 100,
+                        'Times': 10,
+                        'OverTimes': 0
+                    }
+
+                    if len(Tmpreadvals) != 0:
+                        Arrayregister += Tmpreadvals
+                        vals_total_len -= 100
+                        Tmpanyindex += 1
+                    else:
+                        Arrayregister=[]
+                        Tmpanyindex = -1
 
 
 
-        command1="SELECT * FROM `registers` WHERE `MachineGuid`='e19aec11-9b51-4d01-b877-f38b33495414'AND`IsEnable`=1 ORDER BY `Serial`ASC;"
-        cursor.execute(command1)
-        db.commit()
-        asd = cursor.fetchall()
-        for x in asd:
-            print(x)
-        # Update registers演算
-        #     command1 = "UPDATE `registers` SET `value` = %s,`updated_at` = %s WHERE `Guid` = %s"
-        #     cursor.execute(command1, (x['value'], TmpOccurDate,x['RegisterGuid']))
-        #     db.commit()
+            for address in vals:
 
+                try:
+                    word = signed_16(PLCTCPword(tcp[0], tcp[1], address[4])[0])
+                    command = "UPDATE `registers` SET `Value` = %s , `updated_at` = %s WHERE `registers`.`Guid` = %s;"
+                    cursor.execute(command, (word, TmpOccurDate, address[0]))
+                    # db.commit()
+                    # print('{}'.format(word))
 
-    time.sleep(1)
-    print('Running... {}'.format(TmpOccurDate))
+                    db.commit()
+                except:
+                    print(f"Connect Error!, {TmpOccurDate}\n")
+
+                    break
+        time.sleep(20)
 
 exit(0)
-end_time=time.time()
